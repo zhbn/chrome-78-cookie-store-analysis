@@ -1,4 +1,4 @@
-# chrome-78-cookie-store-analysis
+# chromium-78-cookie-store-analysis  chrome chomium cookie 读取保存加密解密过程分析
 源码过程分析:
 第一，chrome创建一个url请求的时候，如何获取cookie，源码文件名network_context.cc，
       在MakeURLRequestContext方法中调用:
