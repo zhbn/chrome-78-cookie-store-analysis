@@ -148,4 +148,65 @@
           return true;
         }
         
-        里边定义了cookie最终使用的加密和解密的方法，才用了windows加密解密API CryptProtectData 和 CryptUnprotectData这2个方法，至此分析完成。
+        里边定义了cookie最终使用的加密和解密的方法，才用了windows加密解密API CryptProtectData 和 CryptUnprotectData这2个方法，至此chromium cookie加密解密方法分析完成。
+
+第二：cookie保存过程分析
+      再第一步的分析中,network_context.cc文件中，
+      在MakeURLRequestContext方法中调用:
+      crypto_delegate = cookie_config::GetCookieCryptoDelegate();创建了一个加密解密的对象，后面是如何传递到cookie读取保存时用于加密解密呢，再这个文件中继续向下分析，可以看到
+          scoped_refptr<net::SQLitePersistentCookieStore> sqlite_store(
+              new net::SQLitePersistentCookieStore(
+                  params_->cookie_path.value(), client_task_runner,
+                  background_task_runner, params_->restore_old_session_cookies,
+                  crypto_delegate));
+       将crypto_delegate传到了net::SQLitePersistentCookieStore这个对象中，这个对象的源文件是sqlite_persistent_cookie_store.cc文件，可以看到保存过程如下：
+       case PendingOperation::COOKIE_ADD:
+          add_smt.Reset(true);
+          add_smt.BindInt64(0, po->cc().CreationDate().ToInternalValue());
+          add_smt.BindString(1, po->cc().Domain());
+          add_smt.BindString(2, po->cc().Name());
+          if (crypto_ && crypto_->ShouldEncrypt()) {
+            std::string encrypted_value;
+            if (!crypto_->EncryptString(po->cc().Value(), &encrypted_value)) {
+              DLOG(WARNING) << "Could not encrypt a cookie, skipping add.";
+              RecordCookieCommitProblem(COOKIE_COMMIT_PROBLEM_ENCRYPT_FAILED);
+              trouble = true;
+              continue;
+            }
+            add_smt.BindCString(3, "");  // value
+            // BindBlob() immediately makes an internal copy of the data.
+            add_smt.BindBlob(4, encrypted_value.data(),
+                             static_cast<int>(encrypted_value.length()));
+          } else {
+            add_smt.BindString(3, po->cc().Value());
+            add_smt.BindBlob(4, "", 0);  // encrypted_value
+          }
+          add_smt.BindString(5, po->cc().Path());
+          add_smt.BindInt64(6, po->cc().ExpiryDate().ToInternalValue());
+          add_smt.BindInt(7, po->cc().IsSecure());
+          add_smt.BindInt(8, po->cc().IsHttpOnly());
+          add_smt.BindInt(
+              9, CookieSameSiteToDBCookieSameSite(po->cc().SameSite()));
+          add_smt.BindInt64(10, po->cc().LastAccessDate().ToInternalValue());
+          add_smt.BindInt(11, po->cc().IsPersistent());
+          add_smt.BindInt(12, po->cc().IsPersistent());
+          add_smt.BindInt(
+              13, CookiePriorityToDBCookiePriority(po->cc().Priority()));
+          if (!add_smt.Run()) {
+            DLOG(WARNING) << "Could not add a cookie to the DB.";
+            RecordCookieCommitProblem(COOKIE_COMMIT_PROBLEM_ADD);
+            trouble = true;
+          }
+          break;
+    可以看到 crypto_->EncryptString(po->cc().Value(), &encrypted_value)将cookie值加密，后面赋值给          
+      add_smt.BindBlob(4, encrypted_value.data(),
+      sql插入的第4个字段，再往上看，可以看到sql过程创建的方法如下：
+        sql::Statement add_smt(db()->GetCachedStatement(
+      SQL_FROM_HERE,
+      // TODO(chlily): These are out of order with respect to the schema
+      // declaration. Fix this.
+      "INSERT INTO cookies (creation_utc, host_key, name, value, "
+      "encrypted_value, path, expires_utc, is_secure, is_httponly, "
+      "samesite, last_access_utc, has_expires, is_persistent, priority) "
+      "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)"));
+      可以看到第4个字段为表单的encrypted_value字段，至此分析完成。
