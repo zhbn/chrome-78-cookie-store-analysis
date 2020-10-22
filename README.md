@@ -6,11 +6,11 @@
       cookie_config namespace下的GetCookieCryptoDelegate方法,    
       接着看道头文件中 #include "components/cookie_config/cookie_store_util.h"    
       猜测GetCookieCryptoDelegate在cookie_store_util.h中定义,    
-      查看其源代码，如下    
+      查看其源代码，如下：    
+      
       namespace net {  
           class CookieCryptoDelegate;  
       }  // namespace net  
-
       namespace cookie_config {
 
       // Factory method for returning a CookieCryptoDelegate if one is appropriate for
@@ -19,7 +19,9 @@
       net::CookieCryptoDelegate* GetCookieCryptoDelegate();
 
     }  // namespace cookie_config
+    
     可以看到，是有这个方法，接着再其对应cookie_store_util.cc文件中，查看其实现方式：
+    
     namespace cookie_config {
         #if defined(OS_WIN) || defined(OS_MACOSX) || defined(OS_LINUX)
         namespace {
