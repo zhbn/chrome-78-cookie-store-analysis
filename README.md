@@ -173,42 +173,42 @@
        将crypto_delegate传到了net::SQLitePersistentCookieStore  
        这个对象中，这个对象的源文件是sqlite_persistent_cookie_store.cc文件，可以看到保存过程如下：  
        case PendingOperation::COOKIE_ADD:  
-          add_smt.Reset(true);  
-          add_smt.BindInt64(0, po->cc().CreationDate().ToInternalValue());  
-          add_smt.BindString(1, po->cc().Domain());  
-          add_smt.BindString(2, po->cc().Name());  
-          if (crypto_ && crypto_->ShouldEncrypt()) {  
-            std::string encrypted_value;  
-            if (!crypto_->EncryptString(po->cc().Value(), &encrypted_value)) {  
-              DLOG(WARNING) << "Could not encrypt a cookie, skipping add.";  
-              RecordCookieCommitProblem(COOKIE_COMMIT_PROBLEM_ENCRYPT_FAILED);  
-              trouble = true;  
-              continue;  
-            }  
-            add_smt.BindCString(3, "");  // value  
-            // BindBlob() immediately makes an internal copy of the data.  
-            add_smt.BindBlob(4, encrypted_value.data(),  
-                             static_cast<int>(encrypted_value.length()));  
-          } else {  
-            add_smt.BindString(3, po->cc().Value());  
-            add_smt.BindBlob(4, "", 0);  // encrypted_value  
-          }
-          add_smt.BindString(5, po->cc().Path());  
-          add_smt.BindInt64(6, po->cc().ExpiryDate().ToInternalValue());  
-          add_smt.BindInt(7, po->cc().IsSecure());  
-          add_smt.BindInt(8, po->cc().IsHttpOnly());  
-          add_smt.BindInt(  
-              9, CookieSameSiteToDBCookieSameSite(po->cc().SameSite()));  
-          add_smt.BindInt64(10, po->cc().LastAccessDate().ToInternalValue());  
-          add_smt.BindInt(11, po->cc().IsPersistent());  
-          add_smt.BindInt(12, po->cc().IsPersistent());  
-          add_smt.BindInt(  
-              13, CookiePriorityToDBCookiePriority(po->cc().Priority()));  
-          if (!add_smt.Run()) {  
-            DLOG(WARNING) << "Could not add a cookie to the DB.";  
-            RecordCookieCommitProblem(COOKIE_COMMIT_PROBLEM_ADD);  
-            trouble = true;  
-          }
+                 add_smt.Reset(true);  
+                 add_smt.BindInt64(0, po->cc().CreationDate().ToInternalValue());  
+                 add_smt.BindString(1, po->cc().Domain());  
+                 add_smt.BindString(2, po->cc().Name());  
+                 if (crypto_ && crypto_->ShouldEncrypt()) {  
+                   std::string encrypted_value;  
+                   if (!crypto_->EncryptString(po->cc().Value(), &encrypted_value)) {  
+                     DLOG(WARNING) << "Could not encrypt a cookie, skipping add.";  
+                     RecordCookieCommitProblem(COOKIE_COMMIT_PROBLEM_ENCRYPT_FAILED);  
+                     trouble = true;  
+                     continue;  
+                   }  
+                   add_smt.BindCString(3, "");  // value  
+                   // BindBlob() immediately makes an internal copy of the data.  
+                   add_smt.BindBlob(4, encrypted_value.data(),  
+                                    static_cast<int>(encrypted_value.length()));  
+                 } else {  
+                   add_smt.BindString(3, po->cc().Value());  
+                   add_smt.BindBlob(4, "", 0);  // encrypted_value  
+                 }
+                 add_smt.BindString(5, po->cc().Path());  
+                 add_smt.BindInt64(6, po->cc().ExpiryDate().ToInternalValue());  
+                 add_smt.BindInt(7, po->cc().IsSecure());  
+                 add_smt.BindInt(8, po->cc().IsHttpOnly());  
+                 add_smt.BindInt(  
+                     9, CookieSameSiteToDBCookieSameSite(po->cc().SameSite()));  
+                 add_smt.BindInt64(10, po->cc().LastAccessDate().ToInternalValue());  
+                 add_smt.BindInt(11, po->cc().IsPersistent());  
+                 add_smt.BindInt(12, po->cc().IsPersistent());  
+                 add_smt.BindInt(  
+                     13, CookiePriorityToDBCookiePriority(po->cc().Priority()));  
+                 if (!add_smt.Run()) {  
+                   DLOG(WARNING) << "Could not add a cookie to the DB.";  
+                   RecordCookieCommitProblem(COOKIE_COMMIT_PROBLEM_ADD);  
+                   trouble = true;  
+                 }          
           break;  
             可以看到 crypto_->EncryptString(po->cc().Value(), &encrypted_value)  
              将cookie值加密，后面赋值给 add_smt.BindBlob(4, encrypted_value.data(),            
