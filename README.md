@@ -154,7 +154,9 @@
           return true;
         }
         
-        里边定义了cookie最终使用的加密和解密的方法，才用了windows加密解密API CryptProtectData 和 CryptUnprotectData这2个方法，至此chromium cookie加密解密方法分析完成。
+        里边定义了cookie最终使用的加密和解密的方法，才用了windows加密解密API CryptProtectData 
+        和 CryptUnprotectData这2个方法，
+        至此chromium cookie加密解密方法分析完成。
 
 第二：cookie保存过程分析
       再第一步的分析中,network_context.cc文件中，
