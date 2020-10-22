@@ -3,8 +3,10 @@
 第一，chrome创建一个url请求的时候，如何获取cookie，源码文件名network_context.cc，
       在MakeURLRequestContext方法中调用:
       crypto_delegate = cookie_config::GetCookieCryptoDelegate();
-      cookie_config namespace下的GetCookieCryptoDelegate方法,接着看道头文件中 #include "components/cookie_config/cookie_store_util.h"
-      猜测GetCookieCryptoDelegate在cookie_store_util.h中定义,查看其源代码，如下
+      cookie_config namespace下的GetCookieCryptoDelegate方法,
+      接着看道头文件中 #include "components/cookie_config/cookie_store_util.h"
+      猜测GetCookieCryptoDelegate在cookie_store_util.h中定义,
+      查看其源代码，如下
       namespace net {
           class CookieCryptoDelegate;
       }  // namespace net
